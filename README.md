@@ -42,10 +42,14 @@ uint8_t nmeaChecksum (const char *sz, size_t len){
 
     for (cs = 0; (i < len) && sz [i]; i++)
         cs ^= ((uint8_t) sz [i]);
-        
+
     return cs;
 }
 ```
+
+## Where to find help
+
+Email [support@swarm.space](support@swarm.space) with any questions!
 
 
 
