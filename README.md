@@ -46,6 +46,15 @@ uint8_t nmeaChecksum (const char *sz, size_t len){
     return cs;
 }
 ```
+***Q:*** There are some differences with the POWERON message between the demo tile, and the tile in our card. 
+```
+$TILE BOOT,POWERON,LPWR=n,WWDG=n,IWDG=n,SFT=Y,BOR=n,PIN=Y,OBL=n,FW=n*4e
+
+vs. 
+
+$TILE BOOT,POWERON,LPWR=n,WWDG=n,IWDG=n,SFT=n,BOR=Y,PIN=Y,OBL=n,FW=n*4e
+```
+***A:*** `SFT=Y/n and BOR=n/Y` is for internal debug and can be disregarded. You can ensure your Tile is functioning correctly.
 
 ## Where to find help
 
