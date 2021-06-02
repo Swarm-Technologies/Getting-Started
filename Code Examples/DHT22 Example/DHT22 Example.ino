@@ -59,7 +59,6 @@ float t = 0;
 float f = 0;
 
 void sendTempData();
-void initTile();
 
 void setup() {
   Serial.begin(115200);
@@ -67,9 +66,6 @@ void setup() {
 
   //Initialize the DHT Sensor
   dht.begin();
-
-  //Initialize Tile
-  initTile();
 
 }
 
@@ -109,18 +105,6 @@ void loop() {
 
   sendTempData();
 
-}
-
-void initTile(){
-  Serial1.println("%DT 1");
-  delay(2000);
-  Serial1.println("%GN 1");
-  delay(2000);
-  Serial1.println("%PW 0");
-  delay(2000);
-  Serial1.println("%RT 0");
-
-  Serial.println("Tile Initialized...");
 }
 
 void sendTempData(){
