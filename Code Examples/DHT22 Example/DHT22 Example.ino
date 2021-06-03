@@ -32,14 +32,9 @@
 // as the current DHT reading algorithm adjusts itself to work on faster procs.
 DHT dht(DHTPIN, DHTTYPE);
 
-// char timeString[32];
-// char gnString[32];
-// std::string gnStringstring;
-
 uint8_t nmeaChecksum (String sz, size_t len)
 {
   size_t i = 0;
-
   uint8_t cs;
 
   if (sz [0] == '$')
@@ -49,9 +44,7 @@ uint8_t nmeaChecksum (String sz, size_t len)
   {
     cs ^= ((uint8_t) sz [i]);
   }
-
   return cs;
-  
 }
 
 float h = 0;
@@ -59,11 +52,15 @@ float t = 0;
 float f = 0;
 
 void sendTempData();
+void readFromTile();
 
 void setup() {
   Serial.begin(115200);
   Serial.println(F("DHTxx test!"));
 
+  //Start TILE serial comms
+  Serial2.begin(115200);
+  
   //Initialize the DHT Sensor
   dht.begin();
 
@@ -104,12 +101,20 @@ void loop() {
   // Serial.println("°F");
 
   sendTempData();
+  readFromTile();
+
+}
+
+void readTileFirmwareVersion(){
+
+  Serial2.println("$FV*10");
+  readFromTile();
 
 }
 
 void sendTempData(){
 
-  String in = "$TD Hum:" + String(h) + "," + "Temp:" + String(f);
+  String in = "$TD \"Hum:" + String(h) + "," + "Temp:" + String(f) +"\"";
   uint8_t checkSum = nmeaChecksum(in, in.length());
 
   //Sends to PC COMM PORT
@@ -117,7 +122,21 @@ void sendTempData(){
   Serial.println(checkSum,HEX);
 
   //Sends to TILE
-  Serial1.print(in + "*");
-  Serial1.println(checkSum,HEX);
+  Serial2.print(in + "*");
+  Serial2.println(checkSum,HEX);
 
+}
+
+void readFromTile(){
+  
+  String incomingString;
+
+  if (Serial2.available() > 0) {
+    
+    incomingString = Serial2.readString();
+
+    Serial.print("Tile Message: ");
+    Serial.println(incomingString);
+
+  }
 }
