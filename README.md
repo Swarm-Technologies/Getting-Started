@@ -56,6 +56,9 @@ $TILE BOOT,POWERON,LPWR=n,WWDG=n,IWDG=n,SFT=n,BOR=Y,PIN=Y,OBL=n,FW=n*4e
 ```
 ***A:*** `SFT=Y/n and BOR=n/Y` is for internal debug and can be disregarded. You can ensure your Tile is functioning correctly.
 
+***Q:*** What type of antenna cable due you recommend?\
+***A:*** We recommend using [LMR-240-UF](https://www.timesmicrowave.com/Products/Cables/LMR_%C2%AE_High_Performance_/LMR%C2%AE_Ultra_Flex/LMR%C2%AE-240-UF/) 
+
 ## Where to find help
 
 Email [support@swarm.space](support@swarm.space) with any questions!
