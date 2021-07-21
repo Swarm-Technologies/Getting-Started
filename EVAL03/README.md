@@ -1,4 +1,4 @@
-# EVAL 03 Getting Started
+# Swarm Evaluation Kit - Getting Started
 
-All information regarding EVAL03
+All information regarding the Swarm Eval Kit
 
