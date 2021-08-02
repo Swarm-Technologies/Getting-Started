@@ -1,0 +1,215 @@
+<html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+
+
+form {
+  /* Just to center the form on the page */
+  margin: 0 auto;
+  width: 400px;
+  /* To see the outline of the form */
+  padding: 1em;
+  border: 1px solid #CCC;
+  border-radius: 1em;
+  max-width: 90vw;
+}
+
+form div + div {
+  margin-top: 1em;
+}
+
+img {
+  width: 400px;
+  max-width: 90vw;
+}
+
+label {
+  /* To make sure that all labels have the same size and are properly aligned */
+  display: block;
+  max-width: 90vw;
+}
+
+button:disabled {
+    background: #F5F5F5;
+    color : #C3C3C3;
+}
+
+input, #msg {
+  /* To make sure that all text fields have the same font settings
+     By default, textareas have a monospace font */
+  font: 1em sans-serif;
+
+  /* To give the same size to all text fields */
+  width: 100%;
+  box-sizing: border-box;
+
+  /* To harmonize the look & feel of text field border */
+  border: 1px solid #999;
+
+
+}
+
+textarea {
+  /* To make sure that all text fields have the same font settings
+     By default, textareas have a monospace font */
+  font: 1em sans-serif;
+
+  /* To give the same size to all text fields */
+  width: 300px;
+  box-sizing: border-box;
+
+  /* To harmonize the look & feel of text field border */
+  border: 1px solid #999;
+
+  resize: none;
+}
+
+input:focus, textarea:focus {
+  /* To give a little highlight on active elements */
+  border-color: #000;
+}
+
+#msg {
+  height: 5em;
+}
+
+#txstatus, #rxstatus {
+
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  /* To properly align multiline text fields with their labels */
+  vertical-align: top;
+
+  /* To give enough room to type some text */
+  height: 5em;
+}
+
+button {
+  /* This extra margin represent roughly the same space as the space
+     between the labels and their text fields */
+  margin-right: auto;
+  margin-left: auto;
+  max-width: 90vw;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+</style>
+<h3><center><img src="logo.png"></img></center></h3>
+<form id="form" action="/msgsend" method="get">
+  <div>
+    <label for="from">From (email):</label>
+    <input type="text" id="from" name="user_from" oninput="checklength()">
+  </div>
+  <div>
+    <label for="to">To (email):</label>
+    <input type="text" id="to" name="user_to" oninput="checklength()">
+  </div>
+  <div>
+    <label for="subject">Subject:</label>
+    <input type="text" id="subject" name="user_subject" oninput="checklength()">
+  </div>
+  <div id="message div">
+    <label for="msg">Message:</label>
+    <textarea id="msg" name="user_message" oninput="checklength()"></textarea>
+  </div>
+  <button id="button" type="button" onclick="onButtonClick()">Send Message</button>
+<div class="remaining">
+Remaining: <label id="remaining" style="text-align: left">42</label>
+</div>
+</form>
+
+<br><br>
+<center>
+  <div>
+    <label for="txstatus">Message Statuses</label>
+    <textarea id="txstatus" name="txstatus" rows="8" cols="60" readonly></textarea>
+  </div>
+
+  <br>
+  <br>
+  <br>
+<!--
+<div>
+  <label for="rxstatus">Messages Received</label>
+<textarea id="rxstatus" name="txstatus" style="height: 10em; width: 600px; max-width: 90vw" readonly></textarea>
+</div>
+!-->
+</center>
+
+<script>
+var maxLength = 148;
+
+document.getElementById("remaining").innerHTML = maxLength.toString();
+
+function checklength(){
+  var total = document.getElementById('from').value.length +
+               document.getElementById('to').value.length +
+               document.getElementById('subject').value.length +
+               document.getElementById('msg').value.length;
+  if (total > maxLength) {
+    document.getElementById("button").disabled = true;
+  }else {
+    document.getElementById("button").disabled = false;
+  }
+  var remaining = maxLength - total;
+  document.getElementById("remaining").innerHTML = remaining.toString();
+}
+
+document.addEventListener("DOMContentLoaded", function(event) {
+  httpGet();
+  setInterval(httpGet,30000);
+});
+
+const url = window.location.protocol +"//" + window.location.hostname + "/mdata";
+
+function httpGet() {
+  const xmlHttp = new XMLHttpRequest();
+  xmlHttp.onreadystatechange = function() {
+    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) filterAndDisplayData(xmlHttp.responseText);
+  }
+  xmlHttp.open("GET", url, true); // true for asynchronous
+  xmlHttp.send(null);
+}
+
+function filterAndDisplayData(result){
+  let lines = result.split("\n");
+  lines.forEach(function(item, index){
+    item = item.slice(0, -3);
+    if(item.substring(0, 6) == "$TD OK") document.getElementById("txstatus").value += "Message accepted\n";
+    if(item.substring(0, 8) == "$TD SENT") document.getElementById("txstatus").value += "Message sent\n";
+    // if(item.substring(0, 3) == "$RD") document.getElementById("rxstatus").value = RDDecode(item.slice(4)) + document.getElementById("rxstatus").value + "\n";
+  });
+}
+
+/*
+function RDDecode(str1) {
+  var split = str1.split(",");
+  var hex  = split[split.length - 1].toString();
+  var str = '';
+  for (var n = 0; n < hex.length; n += 2) {
+    str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
+  }
+  console.log(str);
+  var jobj = JSON.parse(str);
+  return "From: " + jobj.f + "\n" +
+          "To: " + jobj.t + "\n" +
+          "Subject: " + jobj.s + "\n" +
+          jobj.m + "\n\n";
+}
+ */
+//var subjects = ["911 - send help", "I'm fine, please send retrieval information", "Can't respond right now, will try later", "Message"]
+
+function onButtonClick(){
+  var form = document.getElementById("form")
+  form.submit();
+  document.getElementById("txstatus").value = "";
+  document.getElementById("msg").value = "";
+  document.getElementById("subject").value = "";
+  checklength();
+}
+checklength();
+
+</script>
+
+</body></html>
