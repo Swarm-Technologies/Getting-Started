@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '1.1'
+VERSION = '1.2'
 import board
 import displayio
 import digitalio
@@ -21,6 +21,10 @@ from microcontroller import watchdog as w
 from watchdog import WatchDogMode
 from adafruit_debouncer import Debouncer
 import gc
+import ssl
+import adafruit_minimqtt.adafruit_minimqtt as MQTT
+import binascii
+import adafruit_logging as logging
 
 ina3221 = None
 tile = None
@@ -68,7 +72,6 @@ wsgiServer = None
 
 
 config = None
-display = None
 displayLines = []
 inaChannel = 1
 inaConnected = False
@@ -89,6 +92,14 @@ lastRSSI = None
 nextGPSTime = 0
 gpsCount = 0
 
+mqttClient = None
+mqttConnecting = False
+
+# NOTE: If you change this to 8883 the MQTT code will use a secure socket
+#       This does work but currently breaks the socket behaviour for the
+#       web server and tcpListener. Needs looking into...
+MQTT_PORT = 1883
+
 helpMessage = '''
 @set mode <ap, sta>
 Set wifi mode to access point or station mode.
@@ -101,6 +112,9 @@ Set the ssid to connect to in station mode or to create when in ap mode.
 
 @set pw <password>
 Set the password to connect to in station mode or to create when in ap mode.
+
+@set broker <host>
+Set the host name for the MQTT broker to connect to.
 
 @set interval <minutes>
 Set the interval for gps location updating. 0 is never. 15-720 minutes.
@@ -301,7 +315,11 @@ def tilePoll():
       x = tcpconn.send(chars)
     except:
       pass
-
+  try:
+    if mqttClient.is_connected():
+      mqttClient.publish(mqttBaseTopic + "/state/serial_rx", chars.rstrip() )
+  except:
+    pass
 
   for c in chars:
     if c == 0x0A:
@@ -439,6 +457,10 @@ def tcpPoll():
                     writePreferences()
                   else:
                     tcpconn.send("Interval can only be 0 or 15-720 minutes.")
+                if params[1] == 'broker':
+                  config['broker'] = command[12:].strip()
+                  tcpconn.send(f"Successfully set broker to {config['broker']}.")
+                  writePreferences()
               elif params[0] == '@show':
                 if len(params) == 2:
                   if params[1] == 'battery':
@@ -453,6 +475,8 @@ def tcpPoll():
                   tcpconn.send('wifi ssid:' + config['ssid'] + '\n')
                   tcpconn.send('wifi pw:  ' + config['password'] + '\n')
                   tcpconn.send('gps interval: ' + (str(config['interval']), 'OFF')[config['interval'] <= 0] + '\n')
+                  if 'broker' in config:
+                      tcpconn.send('broker: ' + config['broker'] + '\n')
               elif params[0] == '@factory':
                 microcontroller.nvm[0] = 0
                 tcpconn.send("Cleared NVM and Resetting...")
@@ -530,6 +554,10 @@ def serialPoll():
           writePreferences()
         else:
           print("Interval can only be 0 or 15-720 minutes.")
+      if params[1] == 'broker':
+        config['broker'] = accumulate[12:].strip()
+        print(f"Successfully set broker to {config['broker']}.")
+        writePreferences()
     elif params[0] == '@show':
       if len(params) == 2:
         if params[1] == 'battery':
@@ -544,8 +572,10 @@ def serialPoll():
         print('wifi ssid:', config['ssid'])
         print('wifi pw:  ', config['password'])
         print('gps interval: ' + (str(config['interval']), 'OFF')[config['interval'] <= 0] + '\n')
+        if 'broker' in config:
+            print('broker:' + config['broker'] + '\n')
     elif params[0] == '@factory':
-      microcontroller.nvm[0] = 0
+      microcontroller.nvm[0] = 0	
       print("Cleared NVM and Resetting...")
       microcontroller.reset()
     elif params[0] == '@test':
@@ -701,7 +731,9 @@ def readPreferences():
     config['interval'] = 60
   if not 'wifi' in config:
     config['wifi'] = "enabled"
-
+# Add this back in if you want to automatically connect to a broker
+#  if not 'broker' in config:
+#    config['broker'] = "mqtt.eclipseprojects.io"
 
 def watchDogInit():
   w.timeout = 60
@@ -755,12 +787,82 @@ def factoryResetCheck():
     print("Cleared NVM and Resetting...")
     microcontroller.reset()
 
+def connect(mqtt_client, userdata, flags, rc):
+    global mqttConnecting
+    mqttConnecting = False
+    print("Connected to MQTT Broker. Flags: {0}, RC: {1}".format(flags, rc))
+    if rc == 0:
+      print("Subscribing on {0}".format(mqttBaseTopic + "/cmd/#"))
+      mqtt_client.subscribe(mqttBaseTopic + "/cmd/#")
+
+def disconnect(mqtt_client, userdata, rc):
+    print("Disconnected from MQTT Broker!")
+
+def subscribe(mqtt_client, userdata, topic, granted_qos):
+    print("Subscribed to {0} with QOS level {1}".format(topic, granted_qos))
+
+def message(client, topic, message):
+    print("New message on topic {0}: '{1}'".format(topic, message))
+    if topic.endswith("serial_tx"):
+      tile.write(message.encode("utf-8") + b'\n' )
+    elif topic.endswith("cfg"):    
+      print("mqtt: configuration not yet supported")
+    else:
+      print("mqtt: topic not yet supported")
+
+def mqttInit():
+    global mqttClient
+
+    if 'broker' in config:
+
+      mqttClient = MQTT.MQTT(
+        broker=config["broker"],
+        port=MQTT_PORT,
+        username="SwarmEvalKit-" + str(binascii.hexlify(wifi.radio.mac_address)),
+        password="",
+        socket_pool=pool,
+        ssl_context=ssl.create_default_context(),
+      )
+
+      # If we want to debug what is goin on in the MQTT client code
+      #mqttClient.enable_logger(logging, log_level=10)
+
+      mqttClient.on_connect = connect
+      mqttClient.on_subscribe = subscribe
+      mqttClient.on_message = message
+
+def mqttPoll():
+    global mqttClient, mqttConnecting
+
+    if wifi.radio.ipv4_address is None:
+      return
+
+    if 'broker' in config:
+      connected = False
+      try:
+        connected = mqttClient.is_connected()
+      except:
+        pass
+
+      if not connected:
+        if not mqttConnecting:
+          mqttConnecting = True
+	  try:
+            print("Connecting to broker {0}:{1}".format(config['broker'], MQTT_PORT) )
+            mqttClient.connect()
+          except:
+            print("Error connecting to server")
+            mqttConnecting = False
+            pass
+      try:
+        mqttClient.loop(timeout=0)
+      except:
+        pass
 
 watchDogInit()
 buttonInit()
 factoryResetCheck()
 i2c = busio.I2C(board.SCL, board.SDA, frequency=400000)
-# i2c = board.I2C()
 displayInit()
 readPreferences()
 if config['wifi'] == 'enabled':
@@ -769,18 +871,22 @@ if config['wifi'] == 'enabled':
   import ipaddress
   import wsgiserver as server
   from adafruit_wsgi.wsgi_app import WSGIApp
+  mqttBaseTopic = 'Swarm/EvalKit/' + binascii.hexlify(wifi.radio.mac_address).decode("utf-8")
+
 inaInit()
 serialInit()
 tileInit()
 wifiInit()
 tcpInit()
 httpInit()
+mqttInit()
 gpsInit()
 
 while True:
   tilePoll()
   inaPoll()
   gpspoll()
+  mqttPoll()
   serialPoll()
   tcpPoll()
   httppoll()
