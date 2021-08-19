@@ -79,7 +79,7 @@ def setRssiLed(rssiMsg):
         pixels.write()
 
 # function to read DHT sensor and transmit data to Tile
-def readSensor():
+def readSensor(timestamp):
     try:
         # acquire the temperature value from the sensor in degrees C and convert to int
         temperature_c = int(dht.temperature)
@@ -88,7 +88,7 @@ def readSensor():
         # acquire the humidity value from the sensor as a % and convert to int
         humidity = int(dht.humidity)
         # format the data to a single string
-        dataString = 'TEMP: {}, HUM: {}'.format(temperature_c, humidity)
+        dataString = 'Timestamp: {}, Temp: {}, Humidity: {}'.format(timestamp,temperature_c, humidity)
         # add $TD command and convert dataString to HEX
         # conversion to HEX is required for the symbols
         tdCommand = b'$TD ' + hexlify(dataString.encode())
@@ -125,13 +125,13 @@ def getTime(dateTime):
             if iDateTime - refDateTime >= 1800:
                 # update the reference datatime value
                 refDateTime = iDateTime
-                # take a sensor measurement every 30 minutes
-                readSensor()
+                # take a sensor measurement
+                readSensor(refDateTime)
 
 # get RSSI value every 5 seconds
 tile.write(b'$RT 5*13\n')
 
-# set the rate of date/time messages to 60 seconds
+# set the rate of date/time messages to 10 seconds
 tile.write(b'$DT 10*31\n')
 readSerial()
 
