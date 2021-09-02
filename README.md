@@ -11,7 +11,7 @@ Simple code examples can be found in the [Examples](https://github.com/Swarm-Tec
 [Activating your Swarm Tile](https://swarm.space/activating-your-swarm-tile/)\
 [HIVE Login](https://bumblebee.hive.swarm.space/hive/ui/login)\
 [Tile Product Manual](https://swarm.space/swarm-tile-product-manual/)\
-[API Integration Guide](https://swarm.space/wp-content/uploads/2021/05/Swarm-Hive-1.0-API-Integration-Guide.pdf)
+[API Integration Guide](https://swarm.space/swarm-hive-api-integration-guide/)
 
 ## FAQ
 
