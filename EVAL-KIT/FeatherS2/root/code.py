@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '1.1'
+VERSION = '1.2-rc1'
 import board
 import displayio
 import digitalio
@@ -252,20 +252,14 @@ def tileParseLine(line):
   if tileState != TILE_STATE_CONFIGURED:
     tileCheck(line)
     return
-  if line[0:3] == "$TD":
+  if line[0:3] is "$TD":
     if len(mdata) > 10:
       mdata.pop(0)
     mdata.append(line)
-  if line[0:3] == "$DT":
-    if line == "$DT OK*34":
-      lastDT = None
-    else:
-      lastDT = line
-  if line[0:3] == "$GN":
-    if line == "$GN OK*2d":
-        lastGN = None
-    else:
-        lastGN = line
+  if line[0:3] is "$DT":
+    lastDT = line
+  if line[0:3] is "$GN":
+    lastGN = line
   parse = line[:-3].split(' ')
   if parse[0] == '$RT':
     if 'RSSI' in parse[1]:
@@ -608,6 +602,7 @@ def httpInit():
   @web_app.route("/mdata")
   def on_msg(request):
     global mdata
+    mdata.insert(0, '...' if lastRSSI is None else str(lastRSSI))
     response = "\n".join(mdata)
     mdata = []
     return ("200 OK", [], response)
@@ -641,53 +636,39 @@ def urlDecode(s):
 
 
 def gpsInit():
-  global sentQuery
-  sentQuery = False
   displayLine(3, 'GPS Ping: ' + (str(config['interval']) + 'min', 'OFF')[config['interval'] <= 0])
 
 
 def gpspoll():
-  global nextGPSTime,gpsCount,sentQuery
-  global lastGN, lastDT
+  global nextGPSTime,gpsCount
   if config['interval'] > 0:
-      if time.time() > nextGPSTime:
-          if lastGN is not None and lastDT is not None:
-              gpsObj = {}
-              gn = lastGN[4:-3].split(',')
-              s = lastDT
-              gpsObj['d'] = 946684800 + time.mktime((int(s[4:8]), int(s[8:10]), int(s[10:12]), int(s[12:14]), int(s[14:16]), int(s[16:18]), -1, -1, -1))
-              gpsObj['lt'] = float(gn[0])
-              gpsObj['ln'] = float(gn[1])
-              gpsObj['a'] = float(gn[2])
-              gpsObj['c'] = float(gn[3])
-              gpsObj['s'] = float(gn[4])
-              gpsObj['n'] = gpsCount
-              gpsObj['si'] = inaData[2][1]
-              gpsObj['sv'] = inaData[2][0]
-              gpsObj['bi'] = inaData[1][1]
-              gpsObj['bv'] = inaData[1][0]
-              gpsObj['ti'] = inaData[3][1]
-              gpsObj['r'] = lastRSSI
-              gpsCount += 1
-              s = json.dumps(gpsObj)
-              s = s.replace(' ', '')
-              h = b'$TD AI=65535,' + hexlify(s.encode())
-              cs = 0
-              for c in h[1:]:
-                cs = cs ^ c
-              h = h + b'*%02X\n'%cs
-              tile.write(h)
-              nextGPSTime = config['interval'] * 60 + time.time()
-
-              lastGN = None
-              lastDT = None
-              sentQuery = False  # reset query for next ping
-          else:
-              # Force send of $DT @ to update lastDT
-              if not sentQuery:
-                  tile.write(makeTileCmd("$DT @"))
-                  tile.write(makeTileCmd("$GN @"))
-                  sentQuery = True
+    if time.time() > nextGPSTime and lastGN is not None and lastDT is not None:
+      gpsObj = {}
+      gn = lastGN[4:-3].split(',')
+      s = lastDT
+      gpsObj['d'] = 946684800 + time.mktime((int(s[4:8]), int(s[8:10]), int(s[10:12]), int(s[12:14]), int(s[14:16]), int(s[16:18]), -1, -1, -1))
+      gpsObj['lt'] = float(gn[0])
+      gpsObj['ln'] = float(gn[1])
+      gpsObj['a'] = float(gn[2])
+      gpsObj['c'] = float(gn[3])
+      gpsObj['s'] = float(gn[4])
+      gpsObj['n'] = gpsCount
+      gpsObj['si'] = inaData[2][1]
+      gpsObj['sv'] = inaData[2][0]
+      gpsObj['bi'] = inaData[1][1]
+      gpsObj['bv'] = inaData[1][0]
+      gpsObj['ti'] = inaData[3][1]
+      gpsObj['r'] = lastRSSI
+      gpsCount += 1
+      s = json.dumps(gpsObj)
+      s = s.replace(' ', '')
+      h = b'$TD AI=65535,' + hexlify(s.encode())
+      cs = 0
+      for c in h[1:]:
+        cs = cs ^ c
+      h = h + b'*%02X\n'%cs
+      tile.write(h)
+      nextGPSTime = config['interval'] * 60 + time.time()
 
 
 def writePreferences():
@@ -797,16 +778,21 @@ tcpInit()
 httpInit()
 gpsInit()
 
-while True:
-  tilePoll()
-  inaPoll()
-  gpspoll()
-  serialPoll()
-  tcpPoll()
-  httppoll()
-  buttonPoll()
-  w.feed()
-  gc.collect()
+try:
+  while True:
+    tilePoll()
+    inaPoll()
+    gpspoll()
+    serialPoll()
+    tcpPoll()
+    httppoll()
+    buttonPoll()
+    w.feed()
+    gc.collect()
+except Exception as e:
+  print(e)
+  print("Resetting...")
+  microcontroller.reset()
 
 
 
