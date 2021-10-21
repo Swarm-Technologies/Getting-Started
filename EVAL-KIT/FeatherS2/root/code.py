@@ -275,7 +275,10 @@ def tileParseLine(line):
         for r in rdata:
           rtdata.append(r.split('='))
         rtdata = dict(rtdata)
-        d, t = rtdata['TS'].split(' ')
+        if 'T' in rtdata['TS']:
+            d, t = rtdata['TS'].split('T')
+        else:
+            d, t = rtdata['TS'].split(' ')
         d = d.split('-')
         t = t.split(':')
         dtString = d[0][2:]+d[1]+d[2]+'T'+t[0]+t[1]+t[2]
