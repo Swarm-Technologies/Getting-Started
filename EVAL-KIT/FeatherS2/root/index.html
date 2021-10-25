@@ -99,8 +99,14 @@ button {
   opacity: 1;
   transition: 2s opacity;
 }
+
+#remaining {
+  display: inline;
+}
 </style>
 <h3><center><img src="logo.png"></img></center></h3>
+
+
 <form id="form" action="/msgsend" method="get">
   <div>
     <label for="from">From (email):</label>
@@ -124,7 +130,10 @@ Remaining: <label id="remaining" style="text-align: left">148</label>
 </div>
 </form>
 
-<br><br>
+<br>
+
+<form><b>RSSI: <span id="rssi">...</span></b></form>
+<br>
 <center>
   <div>
     <label for="txstatus">Message Statuses</label>
@@ -179,6 +188,7 @@ function httpGet() {
 
 function filterAndDisplayData(result){
   let lines = result.split("\n");
+  document.getElementById("rssi").innerHTML = lines.shift();
   lines.forEach(function(item, index){
     item = item.slice(0, -3);
     if(item.substring(0, 6) == "$TD OK") document.getElementById("txstatus").value += "Message accepted\n";

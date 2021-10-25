@@ -35,6 +35,20 @@ uint8_t nmeaChecksum (const char *sz, size_t len){
     return cs;
 }
 ```
+### Implementation of NMEA checksum in Python
+```
+def nmea_checksum(command: str) -> str:
+    i = 0
+    cs = 0
+    if command[0] == '$':
+        i = 1
+
+    bs = command.encode()
+    for b in bs[i:]:
+        cs ^= b
+
+    return hex(cs)
+```
 ***Q:*** There are some differences with the POWERON message between the demo tile, and the tile in our card. 
 ```
 $TILE BOOT,POWERON,LPWR=n,WWDG=n,IWDG=n,SFT=Y,BOR=n,PIN=Y,OBL=n,FW=n*4e
