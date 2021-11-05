@@ -772,7 +772,15 @@ def buttonPoll():
   # Update wifi RSSI LED and oled
   # TODO move LED updates and maybe oled updates to new fn
   if config['wifi'] == "enabled":
-    displayLine(0, "AP: " + str(wifi.radio.ipv4_address_ap) + f" ({wifi.radio.ap_info.rssi})")
+    rssi = wifi.radio.ap_info.rssi
+    displayLine(0, "AP: " + str(wifi.radio.ipv4_address_ap) + f" ({rssi})")
+    if rssi > -91:
+      pixels[1] = (16, 0, 0, 0)
+    elif rssi < -95:
+      pixels[1] = (0, 16, 0, 0)
+    else:
+      pixels[1] = (16, 16, 0, 0)
+    pixels.write()
 
 
 def factoryResetCheck():
