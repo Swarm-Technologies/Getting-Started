@@ -201,7 +201,7 @@ def wifiInit():
       displayLine(0, "Starting AP...")
       if(config['ssid'] == 'swarm'): config['ssid'] = 'swarm-' + '%02x%02x'%(wifi.radio.mac_address[4], wifi.radio.mac_address[5])
       wifi.radio.start_ap(config["ssid"], config["password"])
-      displayLine(0, "AP: " + str(wifi.radio.ipv4_address_ap))
+      displayLine(0, "AP: " + str(wifi.radio.ipv4_address_ap) + f" ({wifi.radio.ap_info.rssi})")
       TCPHOST = str(wifi.radio.ipv4_address_ap)
       pool = socketpool.SocketPool(wifi.radio)
   except:
@@ -419,7 +419,7 @@ def tcpPoll():
                     writePreferences()
                 if params[1] == 'wifi':
                   if params[2] in ['enabled', 'disabled']:
-                    config['wifi'] = params[2]
+                    config['wifi'] = params[2]  # TODO functionize duplicated
                     if config['wifi'] == 'disabled':
                       pixels[0] = (0,0,0,0)
                       pixels[1] = (0,0,0,0)
@@ -768,6 +768,11 @@ def buttonPoll():
     config['interval'] = config['interval'] * -1
     writePreferences()
     gpsInit()
+
+  # Update wifi RSSI LED and oled
+  # TODO move LED updates and maybe oled updates to new fn
+  if config['wifi'] == "enabled":
+    displayLine(0, "AP: " + str(wifi.radio.ipv4_address_ap) + f" ({wifi.radio.ap_info.rssi})")
 
 
 def factoryResetCheck():
