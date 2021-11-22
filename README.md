@@ -51,11 +51,11 @@ def nmea_checksum(command: str) -> str:
 ```
 ***Q:*** There are some differences with the POWERON message between the demo Swarm Modem, and the Swarm Modem in our card. 
 ```
-$TILE BOOT,POWERON,LPWR=n,WWDG=n,IWDG=n,SFT=Y,BOR=n,PIN=Y,OBL=n,FW=n*4e
+$M138 BOOT,POWERON,LPWR=n,WWDG=n,IWDG=n,SFT=Y,BOR=n,PIN=Y,OBL=n,FW=n*4e
 
 vs. 
 
-$TILE BOOT,POWERON,LPWR=n,WWDG=n,IWDG=n,SFT=n,BOR=Y,PIN=Y,OBL=n,FW=n*4e
+$M138 BOOT,POWERON,LPWR=n,WWDG=n,IWDG=n,SFT=n,BOR=Y,PIN=Y,OBL=n,FW=n*4e
 ```
 ***A:*** `SFT=Y/n and BOR=n/Y` is for internal debug and can be disregarded. You can ensure your Swarm Modem is functioning correctly.
 
