@@ -8,10 +8,10 @@ Simple code examples can be found in the [Examples](https://github.com/Swarm-Tec
 
 [Swarm Pass Checker](https://kube.tools.swarm.space/pass-checker/)\
 [Swarm Eval Kit Quickstart Video](https://youtu.be/zJMWd1PM13E)\
-[Activating your Swarm Tile](https://swarm.space/activating-your-swarm-tile/)\
+[Activating your Swarm M138 Modem](https://swarm.space/activating-your-swarm-m138-modem/)\
 [HIVE Login](https://bumblebee.hive.swarm.space/hive/ui/login)\
-[Tile Product Manual](https://swarm.space/swarm-tile-product-manual/)\
-[API Integration Guide](https://swarm.space/swarm-hive-api-integration-guide/)
+[Swarm M138 Modem Product Manual](https://swarm.space/swarm-m138-modem-product-manual-1-00/)\
+[API Integration Guide](https://swarm.space/swarm-hive-1-2-api-integration-guide/)
 
 ## FAQ
 
@@ -19,7 +19,7 @@ Simple code examples can be found in the [Examples](https://github.com/Swarm-Tec
 ***A:*** Send `$RT 0*16` via Telnet connection
 
 ***Q:*** How do I calculate the checksum?\
-***A:*** For test you can use the [NMEA Checksum Calculator](https://nmeachecksum.eqth.net/) or for integration you can use the following C code found on pg. 34 of the [manual](https://swarm.space/wp-content/uploads/2021/04/Swarm-Tile-Product-Manual.pdf).
+***A:*** For testing, you can use the [NMEA Checksum Calculator](https://nmeachecksum.eqth.net/) or for integration you can use the following C code found on pg. 34 of the [manual](https://swarm.space/wp-content/uploads/2021/04/Swarm-Tile-Product-Manual.pdf).
 ### Implementation of NMEA checksum in C
 ```
 uint8_t nmeaChecksum (const char *sz, size_t len){
@@ -49,7 +49,7 @@ def nmea_checksum(command: str) -> str:
 
     return hex(cs)
 ```
-***Q:*** There are some differences with the POWERON message between the demo tile, and the tile in our card. 
+***Q:*** There are some differences with the POWERON message between the demo Swarm Modem, and the Swarm Modem in our card. 
 ```
 $TILE BOOT,POWERON,LPWR=n,WWDG=n,IWDG=n,SFT=Y,BOR=n,PIN=Y,OBL=n,FW=n*4e
 
@@ -57,7 +57,7 @@ vs.
 
 $TILE BOOT,POWERON,LPWR=n,WWDG=n,IWDG=n,SFT=n,BOR=Y,PIN=Y,OBL=n,FW=n*4e
 ```
-***A:*** `SFT=Y/n and BOR=n/Y` is for internal debug and can be disregarded. You can ensure your Tile is functioning correctly.
+***A:*** `SFT=Y/n and BOR=n/Y` is for internal debug and can be disregarded. You can ensure your Swarm Modem is functioning correctly.
 
 ***Q:*** What type of antenna cable do you recommend?\
 ***A:*** We recommend using [LMR-240-UF](https://www.timesmicrowave.com/Products/Cables/LMR_%C2%AE_High_Performance_/LMR%C2%AE_Ultra_Flex/LMR%C2%AE-240-UF/) 
