@@ -19,7 +19,7 @@ Simple code examples can be found in the [Examples](https://github.com/Swarm-Tec
 ***A:*** Send `$RT 0*16` via Telnet connection
 
 ***Q:*** How do I calculate the checksum?\
-***A:*** For testing, you can use the [NMEA Checksum Calculator](https://nmeachecksum.eqth.net/) or for integration you can use the following C code found on pg. 34 of the [manual](https://swarm.space/wp-content/uploads/2021/04/Swarm-Tile-Product-Manual.pdf).
+***A:*** For testing, you can use the [NMEA Checksum Calculator](https://nmeachecksum.eqth.net/) or for integration you can use the following C code found on pg. 34 of the [manual](https://swarm.space/swarm-m138-modem-product-manual/).
 ### Implementation of NMEA checksum in C
 ```
 uint8_t nmeaChecksum (const char *sz, size_t len){
