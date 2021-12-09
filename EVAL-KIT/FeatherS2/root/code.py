@@ -85,6 +85,7 @@ switchC = None
 
 accumulate = ""
 inaTime = 0
+wifiTime = 0
 
 global RSSI_RED, RSSI_GREEN
 # These values are default for DN=TILE
@@ -221,7 +222,10 @@ def wifiInit():
 
 
 def wifiConnectionPoll():
+    global wifiTime
     if config['wifi'] == "disabled":
+        return
+    if time.time() - wifiTime < 2:
         return
     connected_network = wifi.radio.ap_info
     if connected_network is None:
@@ -239,8 +243,7 @@ def wifiConnectionPoll():
         else:
             pixels[1] = (16, 16, 0, 0)
         pixels.write()
-
-
+    wifiTime = time.time()
 
 
 def tileCheck(line):
