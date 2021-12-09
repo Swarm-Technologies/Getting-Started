@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '1.2'
+VERSION = '1.3-rc1'
 import board
 import displayio
 import digitalio
@@ -27,20 +27,26 @@ tile = None
 tileLine = bytearray(800)
 tilePtr = 0
 
+global DEVTAG
+DEVTAG = "TILE"
+
+
 TILE_STATE_UNKNOWN = 0
 TILE_STATE_REBOOTING = 1
 TILE_STATE_2 = 2
 TILE_STATE_3 = 3
 TILE_STATE_4 = 4
 TILE_STATE_5 = 5
-TILE_STATE_CONFIGURED = 6
+TILE_STATE_6 = 6  # M138 or TILE
+TILE_STATE_CONFIGURED = 7
 
 tileStateTable = [('$FV',   '$FV 20',              4, TILE_STATE_2, TILE_STATE_REBOOTING),  # 0 state
-                  ('$RS',   '$TILE BOOT,RUNNING', 30, TILE_STATE_2, TILE_STATE_REBOOTING),  # 1 state
+                  ('$RS',   f'${DEVTAG} BOOT,RUNNING', 30, TILE_STATE_2, TILE_STATE_REBOOTING),  # 1 state
                   ('$DT 5', '$DT OK',              4, TILE_STATE_3, TILE_STATE_REBOOTING),  # 2 state
                   ('$GS 5', '$GS OK',              4, TILE_STATE_4, TILE_STATE_REBOOTING),  # 3 state
                   ('$GN 5', '$GN OK',              4, TILE_STATE_5, TILE_STATE_REBOOTING),  # 4 state
-                  ('$RT 5', '$RT OK',              4, TILE_STATE_CONFIGURED, TILE_STATE_REBOOTING),  # 5 state
+                  ('$RT 5', '$RT OK',              4, TILE_STATE_6, TILE_STATE_REBOOTING),  # 5 state
+                  ('$CS', '$CS DI=',               4, TILE_STATE_CONFIGURED, TILE_STATE_REBOOTING),  # 5 state
                   (None,     None,                 0, TILE_STATE_CONFIGURED, TILE_STATE_CONFIGURED)]  # 6 state
 tileTimeout = 0.0
 tileState = TILE_STATE_UNKNOWN
@@ -80,7 +86,12 @@ switchC = None
 accumulate = ""
 inaTime = 0
 
+global RSSI_RED, RSSI_GREEN
+# These values are default for DN=TILE
+RSSI_RED = -91
+RSSI_GREEN = -95
 pixels = neopixel.NeoPixel(board.IO38, 2, bpp=4, pixel_order=neopixel.GRBW)
+
 
 mdata = []
 lastGN = None
@@ -209,6 +220,7 @@ def wifiInit():
 
 
 def tileCheck(line):
+  # TODO why is this broken out like this
   global tileTimeout
   if  tileStateTable[tileState][1] in line:
     tileTimeout = -1.0
@@ -226,6 +238,7 @@ def tileStart():
       serialPoll()
       w.feed()
     if tileTimeout  < 0.0:
+      # Success from state table?
       tileState = tileStateTable[tileState][3]
     else:
       tileState = tileStateTable[tileState][4]
@@ -238,6 +251,7 @@ def tileInit():
 
 
 def tileParseLine(line):
+  print(line)  # TODO configure
   global lastDT, lastGN, lastRSSI
   if len(line) < 4:
     return
@@ -251,7 +265,7 @@ def tileParseLine(line):
     return
   if tileState != TILE_STATE_CONFIGURED:
     tileCheck(line)
-    return
+    #return
   if line[0:3] == "$TD":
     if len(mdata) > 10:
       mdata.pop(0)
@@ -267,6 +281,21 @@ def tileParseLine(line):
     else:
         lastGN = line
   parse = line[:-3].split(' ')
+  if parse[0] == "$CS":
+    if ',' in parse[1]:
+      cs_params = parse[1].split(',')
+      for param in cs_params:
+          k, v = param.split('=')
+          if k == "DN":
+              global DEVTAG, RSSI_RED, RSSI_GREEN
+              DEVTAG = v
+              # Here is where M138 vs Tile params can be set
+              if DEVTAG == "TILE":
+                RSSI_RED = -91
+                RSSI_GREEN = -95
+              elif DEVTAG == "M138":
+                RSSI_RED = -87
+                RSSI_GREEN = -91
   if parse[0] == '$RT':
     if 'RSSI' in parse[1]:
       if ',' in parse[1]:
@@ -288,12 +317,15 @@ def tileParseLine(line):
       else:
         rssi = parse[1].split('=')
         displayLine(2, "RSSI: " + rssi[1])
+
         irssi = int(rssi[1])
         lastRSSI = irssi
+
+        # TODO LED enable config option
         if config['wifi'] == 'enabled':
-          if irssi > -91:
+          if irssi > RSSI_RED: # -91 
             pixels[0] = (16, 0, 0, 0)
-          elif irssi < -95:
+          elif irssi < RSSI_GREEN:  # -95
             pixels[0] = (0, 16, 0, 0)
           else:
             pixels[0] = (16, 16, 0, 0)
