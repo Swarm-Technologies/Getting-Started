@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '1.3-rc1'
+VERSION = '1.3-rc2'
 import board
 import displayio
 import digitalio
@@ -212,10 +212,11 @@ def wifiInit():
       displayLine(0, "Starting AP...")
       if(config['ssid'] == 'swarm'): config['ssid'] = 'swarm-' + '%02x%02x'%(wifi.radio.mac_address[4], wifi.radio.mac_address[5])
       wifi.radio.start_ap(config["ssid"], config["password"])
-      displayLine(0, "AP: " + str(wifi.radio.ipv4_address_ap) + f" ({wifi.radio.ap_info.rssi})")
+      displayLine(0, "AP: " + str(wifi.radio.ipv4_address_ap))
       TCPHOST = str(wifi.radio.ipv4_address_ap)
       pool = socketpool.SocketPool(wifi.radio)
-  except:
+  except Exception as e:
+      # TODO exceptions here breake tcpInit
     displayLine(0, "Can't Connect")
 
 
@@ -397,7 +398,7 @@ def tcpInit():
     return
   if wifi.radio.ipv4_address_ap is None and wifi.radio.ipv4_address is None:
     return
-  global TCPSTATE, tcplistener, tcpconn
+  global TCPSTATE, TCPHOST, tcplistener, tcpconn
   print("Create TCP Server socket", (TCPHOST, TCPPORT))
   tcplistener = pool.socket(pool.AF_INET, pool.SOCK_STREAM)
   tcplistener.settimeout(TIMEOUT)
@@ -804,15 +805,16 @@ def buttonPoll():
   # Update wifi RSSI LED and oled
   # TODO move LED updates and maybe oled updates to new fn
   if config['wifi'] == "enabled":
-    rssi = wifi.radio.ap_info.rssi
-    displayLine(0, "AP: " + str(wifi.radio.ipv4_address) + f" ({rssi})")
-    if rssi > -91:
-      pixels[1] = (16, 0, 0, 0)
-    elif rssi < -95:
-      pixels[1] = (0, 16, 0, 0)
-    else:
-      pixels[1] = (16, 16, 0, 0)
-    pixels.write()
+    if config['mode'] == "sta" and hasattr(wifi.radio.ap_info, "rssi"):
+      rssi = wifi.radio.ap_info.rssi
+      displayLine(0, "AP: " + str(wifi.radio.ipv4_address) + f" ({rssi})")
+      if rssi > -45:  # TODO determine best wifi RSSI values
+        pixels[1] = (0, 16, 0, 0)
+      elif rssi < -67:
+        pixels[1] = (16, 0, 0, 0)
+      else:
+        pixels[1] = (16, 16, 0, 0)
+      pixels.write()
 
 
 def factoryResetCheck():
