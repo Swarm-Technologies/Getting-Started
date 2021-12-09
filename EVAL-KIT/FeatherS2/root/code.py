@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '1.3-rc2'
+VERSION = '1.3-rc3'
 import board
 import displayio
 import digitalio
@@ -218,6 +218,29 @@ def wifiInit():
   except Exception as e:
       # TODO exceptions here breake tcpInit
     displayLine(0, "Can't Connect")
+
+
+def wifiConnectionPoll():
+    if config['wifi'] == "disabled":
+        return
+    connected_network = wifi.radio.ap_info
+    if connected_network is None:
+        displayLine(0, "Wifi disconnected")
+        wifiInit()
+        tcpInit()
+        httpInit()
+    if config['mode'] == "sta" and hasattr(wifi.radio.ap_info, "rssi"):
+        rssi = wifi.radio.ap_info.rssi
+        displayLine(0, "AP: " + str(wifi.radio.ipv4_address) + f" ({rssi})")
+        if rssi > -45:  # TODO determine best wifi RSSI values
+            pixels[1] = (0, 16, 0, 0)
+        elif rssi < -67:
+            pixels[1] = (16, 0, 0, 0)
+        else:
+            pixels[1] = (16, 16, 0, 0)
+        pixels.write()
+
+
 
 
 def tileCheck(line):
@@ -802,20 +825,6 @@ def buttonPoll():
     writePreferences()
     gpsInit()
 
-  # Update wifi RSSI LED and oled
-  # TODO move LED updates and maybe oled updates to new fn
-  if config['wifi'] == "enabled":
-    if config['mode'] == "sta" and hasattr(wifi.radio.ap_info, "rssi"):
-      rssi = wifi.radio.ap_info.rssi
-      displayLine(0, "AP: " + str(wifi.radio.ipv4_address) + f" ({rssi})")
-      if rssi > -45:  # TODO determine best wifi RSSI values
-        pixels[1] = (0, 16, 0, 0)
-      elif rssi < -67:
-        pixels[1] = (16, 0, 0, 0)
-      else:
-        pixels[1] = (16, 16, 0, 0)
-      pixels.write()
-
 
 def factoryResetCheck():
   switchA.update()
@@ -854,6 +863,7 @@ try:
     inaPoll()
     gpspoll()
     serialPoll()
+    wifiConnectionPoll()
     tcpPoll()
     httppoll()
     buttonPoll()
