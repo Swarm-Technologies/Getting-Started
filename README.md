@@ -37,7 +37,7 @@ uint8_t nmeaChecksum (const char *sz, size_t len){
 ```
 ### Implementation of NMEA checksum in Python
 ```
-def nmea_checksum(command: str) -> str:
+def nmea_checksum(command: str) -> int:
     i = 0
     cs = 0
     if command[0] == '$':
@@ -47,7 +47,7 @@ def nmea_checksum(command: str) -> str:
     for b in bs[i:]:
         cs ^= b
 
-    return hex(cs)
+    return cs
 ```
 ***Q:*** There are some differences with the POWERON message between the demo Swarm Modem, and the Swarm Modem in our card. 
 ```
