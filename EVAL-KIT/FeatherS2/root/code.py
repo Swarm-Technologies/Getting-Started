@@ -216,12 +216,10 @@ def wifiInit():
       TCPHOST = str(wifi.radio.ipv4_address_ap)
       pool = socketpool.SocketPool(wifi.radio)
   except Exception as e:
-      # TODO exceptions here breake tcpInit
     displayLine(0, "Can't Connect")
 
 
 def tileCheck(line):
-  # TODO why is this broken out like this
   global tileTimeout
   if  tileStateTable[tileState][1] in line:
     tileTimeout = -1.0
@@ -252,7 +250,7 @@ def tileInit():
 
 
 def tileParseLine(line):
-  print(line)  # TODO configure
+  print(line)
   global lastDT, lastGN, lastRSSI
   if len(line) < 4:
     return
@@ -322,7 +320,6 @@ def tileParseLine(line):
         irssi = int(rssi[1])
         lastRSSI = irssi
 
-        # TODO LED enable config option
         if config['wifi'] == 'enabled':
           if irssi > RSSI_RED: # -91 
             pixels[0] = (16, 0, 0, 0)
@@ -452,7 +449,7 @@ def tcpPoll():
                     writePreferences()
                 if params[1] == 'wifi':
                   if params[2] in ['enabled', 'disabled']:
-                    config['wifi'] = params[2]  # TODO functionize duplicated
+                    config['wifi'] = params[2]
                     if config['wifi'] == 'disabled':
                       pixels[0] = (0,0,0,0)
                       pixels[1] = (0,0,0,0)
@@ -803,12 +800,11 @@ def buttonPoll():
     gpsInit()
 
   # Update wifi RSSI LED and oled
-  # TODO move LED updates and maybe oled updates to new fn
   if config['wifi'] == "enabled":
     if config['mode'] == "sta" and hasattr(wifi.radio.ap_info, "rssi"):
       rssi = wifi.radio.ap_info.rssi
       displayLine(0, "AP: " + str(wifi.radio.ipv4_address) + f" ({rssi})")
-      if rssi > -45:  # TODO determine best wifi RSSI values
+      if rssi > -45:
         pixels[1] = (0, 16, 0, 0)
       elif rssi < -67:
         pixels[1] = (16, 0, 0, 0)
