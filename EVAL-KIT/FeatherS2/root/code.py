@@ -803,7 +803,7 @@ def buttonPoll():
   if config['wifi'] == "enabled":
     if config['mode'] == "sta" and hasattr(wifi.radio.ap_info, "rssi"):
       rssi = wifi.radio.ap_info.rssi
-      displayLine(0, "AP: " + str(wifi.radio.ipv4_address) + f" ({rssi})")
+      displayLine(0, "ST: " + str(wifi.radio.ipv4_address) + f" ({rssi})")
       if rssi > -45:
         pixels[1] = (0, 16, 0, 0)
       elif rssi < -67:
