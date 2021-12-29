@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '1.3.2'
+VERSION = '1.3.2-rc1'
 import board
 import displayio
 import digitalio
