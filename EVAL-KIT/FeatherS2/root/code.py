@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '1.3.1'
+VERSION = '1.3.2'
 import board
 import displayio
 import digitalio
@@ -37,18 +37,18 @@ TILE_STATE_2 = 2
 TILE_STATE_3 = 3
 TILE_STATE_4 = 4
 TILE_STATE_5 = 5
-TILE_STATE_6 = 6  # M138 or TILE
+TILE_STATE_CS = 6  # M138 or TILE
 TILE_STATE_CONFIGURED = 7
 
 tileStateTable = [('$FV',   '$FV 20',              4, TILE_STATE_2, TILE_STATE_REBOOTING),  # 0 state
-                  ('$RS',   f'${DEVTAG} BOOT,RUNNING', 30, TILE_STATE_2, TILE_STATE_REBOOTING),  # 1 state
+                  # `OT,RUNNING` for `BOOT,RUNNING`, temp fix for weird behavior
+                  ('$RS',   "OT,RUNNING",       30, TILE_STATE_2, TILE_STATE_REBOOTING),  # 1 state
                   ('$DT 5', '$DT OK',              4, TILE_STATE_3, TILE_STATE_REBOOTING),  # 2 state
                   ('$GS 5', '$GS OK',              4, TILE_STATE_4, TILE_STATE_REBOOTING),  # 3 state
                   ('$GN 5', '$GN OK',              4, TILE_STATE_5, TILE_STATE_REBOOTING),  # 4 state
-                  ('$RT 5', '$RT OK',              4, TILE_STATE_6, TILE_STATE_REBOOTING),  # 5 state
-                  ('$CS', '$CS DI=',               4, TILE_STATE_CONFIGURED, TILE_STATE_REBOOTING),  # 5 state
-                  (None,     None,                 0, TILE_STATE_CONFIGURED, TILE_STATE_CONFIGURED)]  # 6 state
+                  ('$RT 5', '$RT OK',              4, TILE_STATE_CS, TILE_STATE_REBOOTING),  # 5 state
                   ('$CS', 'DN=',               4, TILE_STATE_CONFIGURED, TILE_STATE_REBOOTING),  # 6 state
+                  (None,     None,                 0, TILE_STATE_CONFIGURED, TILE_STATE_CONFIGURED)]  # 7 state
 tileTimeout = 0.0
 tileState = TILE_STATE_UNKNOWN
 
@@ -221,8 +221,9 @@ def wifiInit():
 
 
 def tileCheck(line):
-  global tileTimeout
-  if  tileStateTable[tileState][1] in line:
+  global tileTimeout, tileState
+  query = tileStateTable[tileState][1]
+  if query in line:
     tileTimeout = -1.0
 
 
@@ -261,11 +262,13 @@ def tileParseLine(line):
   cksum2 = int(line[-2:], 16)
   for c in line[1:-3]:
     cksum1 = cksum1 ^ ord(c)
-  if cksum1 != cksum2:
+  if cksum1 != cksum2 and line[0] == '$':
     return
   if tileState != TILE_STATE_CONFIGURED:
     tileCheck(line)
-    #return
+    if tileState != TILE_STATE_CS:
+        # do not return on tile state cs (need to parse $CS below)
+        return
   if line[0:3] == "$TD":
     if len(mdata) > 10:
       mdata.pop(0)
