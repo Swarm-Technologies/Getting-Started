@@ -48,6 +48,7 @@ tileStateTable = [('$FV',   '$FV 20',              4, TILE_STATE_2, TILE_STATE_R
                   ('$RT 5', '$RT OK',              4, TILE_STATE_6, TILE_STATE_REBOOTING),  # 5 state
                   ('$CS', '$CS DI=',               4, TILE_STATE_CONFIGURED, TILE_STATE_REBOOTING),  # 5 state
                   (None,     None,                 0, TILE_STATE_CONFIGURED, TILE_STATE_CONFIGURED)]  # 6 state
+                  ('$CS', 'DN=',               4, TILE_STATE_CONFIGURED, TILE_STATE_REBOOTING),  # 6 state
 tileTimeout = 0.0
 tileState = TILE_STATE_UNKNOWN
 
@@ -859,6 +860,5 @@ except Exception as e:
   print(e)
   print("Resetting...")
   microcontroller.reset()
-
 
 
