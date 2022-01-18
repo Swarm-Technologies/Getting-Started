@@ -1,4 +1,4 @@
-# Copyright 2021 Swarm Technologies
+23# Copyright 2021 Swarm Technologies
 #
 # Attribution Information:
 # https://circuitpython.org/libraries
@@ -19,10 +19,7 @@ import neopixel
 from binascii import hexlify
 
 # set up UART for Tile communication
-tile = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=8192, timeout=0.0)
-
-# set up pixels LED on eval kit
-pixels = neopixel.NeoPixel(board.IO38, 2, bpp=4, pixel_order=neopixel.GRBW)
+modem = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=8192, timeout=0.0)
 
 # set the sensor's input pin to measure the analog voltage
 sensorPin = analogio.AnalogIn(board.A0)
@@ -32,6 +29,17 @@ lowLevelVoltage = 2.50
 
 # initialize variable for datetime reference
 refDateTime = 0
+
+# initialize variable for Modem Type
+global DEVTAG
+DEVTAG = None
+
+# initialize variables for RSSI LED
+global RSSI_RED, RSSI_GREEN
+# These values are default for DN=TILE
+RSSI_RED = -91
+RSSI_GREEN = -95
+pixels = neopixel.NeoPixel(board.IO38, 2, bpp=4, pixel_order=neopixel.GRBW)
 
 # function to calculate checksum for Tile commands
 def makeTileCmd(cmd):
@@ -43,7 +51,7 @@ def makeTileCmd(cmd):
 
 # function to read serial data
 def readSerial():
-    received = tile.read(800)
+    received = modem.read(800)
     if received is not None:
         # convert bytearray to string
         data_string = ''.join([chr(b) for b in received])
@@ -114,7 +122,7 @@ def sensorVoltage(timestamp):
     if voltage >= lowLevelVoltage:
         print('send email')
         # enter email addresses here
-         this line is intentionally uncommented to ensure that the command below is updated with valid email addresses. Comment this line once the email addresses have been updated
+        this line is intentionally uncommented to ensure that the command below is updated with valid email addresses. Comment this line once the email addresses have been updated
         tdCommand = b'$TD AI=65000,"{"t": "to email address", "f": "from email address", "s": "Water Level Alert", "m": "Water level in tank is too low", "i": 1}"'
     else:
         dataString = '{}, {}'.format(timestamp, voltage)
@@ -122,13 +130,13 @@ def sensorVoltage(timestamp):
         # conversion to HEX is required for the symbols
         tdCommand = b'$TD ' + hexlify(dataString.encode())
         # Write the command to the Tile
-    tile.write(makeTileCmd(tdCommand))
+    modem.write(makeTileCmd(tdCommand))
 
 # get RSSI value every 5 seconds
-tile.write(b'$RT 5*13\n')
+modem.write(b'$RT 5*13\n')
 
 # set the rate of date/time messages to 5 seconds
-tile.write(b'$DT 5*05\n')
+modem.write(b'$DT 5*05\n')
 
 readSerial()
 
@@ -144,6 +152,25 @@ while True:
     if serialData is not None:
         # parse the serial data
         parse = serialData[:-3].split(' ')
+        # get the Modem Type if it is not already acquired
+        if DEVTAG == None:
+            # acquire the device information from the Modem
+            modem.write(b'$CS*10\n')
+            if parse[0] == "$CS":
+                if ',' in parse[1]:
+                    cs_params = parse[1].split(',')
+                for param in cs_params:
+                    k, v = param.split('=')
+                    if k == "DN":
+                        global DEVTAG, RSSI_RED, RSSI_GREEN
+                        DEVTAG = v.strip('*')
+                        # Here is where M138 vs Tile params can be set for the RSSI LED
+                        if DEVTAG == "TILE":
+                            RSSI_RED = -91
+                            RSSI_GREEN = -95
+                        elif DEVTAG == "M138":
+                            RSSI_RED = -87
+                            RSSI_GREEN = -91
         # check if it is a RSSI message
         if parse[0] == '$RT':
             # pass the data to the function that will set the color for the on board LED
