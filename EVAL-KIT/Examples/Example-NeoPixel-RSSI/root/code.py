@@ -15,14 +15,22 @@ import busio
 import neopixel
 
 # set up UART for Tile communication
-tile = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=8192, timeout=0.0)
+modem = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=8192, timeout=0.0)
 
-# set up pixels LED on eval kit
+# initialize variable for Modem Type
+global DEVTAG
+DEVTAG = None
+
+# initialize variables for RSSI LED
+global RSSI_RED, RSSI_GREEN
+# These values are default for DN=TILE
+RSSI_RED = -91
+RSSI_GREEN = -95
 pixels = neopixel.NeoPixel(board.IO38, 2, bpp=4, pixel_order=neopixel.GRBW)
 
 # function to read serial data
 def readSerial():
-    received = tile.read(800)
+    received = modem.read(800)
     if received is not None:
         # convert bytearray to string
         data_string = ''.join([chr(b) for b in received])
@@ -55,7 +63,7 @@ def setRssiLed(rssiMsg):
         pixels.write()
 
 #get RSSI value every 5 seconds
-tile.write(b'$RT 5*13\n')
+modem.write(b'$RT 5*13\n')
 readSerial()
 
 while True:
@@ -66,6 +74,25 @@ while True:
     if serialData is not None:
         # parse the serial data
         parse = serialData[:-3].split(' ')
+        # get the Modem Type if it is not already acquired
+        if DEVTAG == None:
+            # acquire the device information from the Modem
+            modem.write(b'$CS*10\n')
+            if parse[0] == "$CS":
+                if ',' in parse[1]:
+                    cs_params = parse[1].split(',')
+                for param in cs_params:
+                    k, v = param.split('=')
+                    if k == "DN":
+                        global DEVTAG, RSSI_RED, RSSI_GREEN
+                        DEVTAG = v.strip('*')
+                        # Here is where M138 vs Tile params can be set for the RSSI LED
+                        if DEVTAG == "TILE":
+                            RSSI_RED = -91
+                            RSSI_GREEN = -95
+                        elif DEVTAG == "M138":
+                            RSSI_RED = -87
+                            RSSI_GREEN = -91
         # check if it is a RSSI message
         if parse[0] == '$RT':
             # pass the data to the function that will set the color for the on board LED

@@ -18,10 +18,7 @@ import adafruit_dht
 from binascii import hexlify
 
 # set up UART for Tile communication
-tile = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=8192, timeout=0.0)
-
-# set up pixels LED on eval kit
-pixels = neopixel.NeoPixel(board.IO38, 2, bpp=4, pixel_order=neopixel.GRBW)
+modem = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=8192, timeout=0.0)
 
 # initial the dht device, with data pin connected to IO5/D19 on the FeatherS2
 # power pin connected to 3V pin on FeatherS2
@@ -31,8 +28,20 @@ dht = adafruit_dht.DHT22(board.D19)
 # initialize variable for datetime reference
 refDateTime = 0
 
+# initialize variable for Modem Type
+global DEVTAG
+DEVTAG = None
+
+# initialize variables for RSSI LED
+global RSSI_RED, RSSI_GREEN
+# These values are default for DN=TILE
+RSSI_RED = -91
+RSSI_GREEN = -95
+# set up pixels LED on eval kit
+pixels = neopixel.NeoPixel(board.IO38, 2, bpp=4, pixel_order=neopixel.GRBW)
+
 # function to calculate checksum for Tile commands
-def makeTileCmd(cmd):
+def makeModemCmd(cmd):
   cbytes = cmd
   cs = 0
   for c in cbytes[1:]:
@@ -41,7 +50,7 @@ def makeTileCmd(cmd):
 
 # function to read serial data
 def readSerial():
-    received = tile.read(800)
+    received = modem.read(800)
     if received is not None:
         # convert bytearray to string
         data_string = ''.join([chr(b) for b in received])
@@ -70,9 +79,9 @@ def setRssiLed(rssiMsg):
         # convert the RSSI value to an integer
         irssi = int(rssiStringJoin)
         # set the LED color based on the RSSI value
-        if irssi > -91:
+        if irssi > RSSI_RED:
             pixels[0] = (16, 0, 0, 0)
-        elif irssi < -95:
+        elif irssi < RSSI_GREEN:
             pixels[0] = (0, 16, 0, 0)
         else:
             pixels[0] = (16, 16, 0, 0)
@@ -94,7 +103,7 @@ def readSensor(timestamp):
         tdCommand = b'$TD ' + hexlify(dataString.encode())
         # Print the Tile command with the checksum
         # Write the command to the Tile
-        tile.write(makeTileCmd(tdCommand))
+        modem.write(makeModemCmd(tdCommand))
     except RuntimeError as error:
         # Errors happen fairly often, DHT's are hard to read, just keep going
         print(error.args[0])
@@ -129,10 +138,10 @@ def getTime(dateTime):
                 readSensor(refDateTime)
 
 # get RSSI value every 5 seconds
-tile.write(b'$RT 5*13\n')
+modem.write(b'$RT 5*13\n')
 
 # set the rate of date/time messages to 10 seconds
-tile.write(b'$DT 10*31\n')
+modem.write(b'$DT 10*31\n')
 readSerial()
 
 print('******************************')
@@ -147,6 +156,25 @@ while True:
     if serialData is not None:
         # parse the serial data
         parse = serialData[:-3].split(' ')
+        # get the Modem Type if it is not already acquired
+        if DEVTAG == None:
+            # acquire the device information from the Modem
+            modem.write(b'$CS*10\n')
+            if parse[0] == "$CS":
+                if ',' in parse[1]:
+                    cs_params = parse[1].split(',')
+                for param in cs_params:
+                    k, v = param.split('=')
+                    if k == "DN":
+                        global DEVTAG, RSSI_RED, RSSI_GREEN
+                        DEVTAG = v.strip('*')
+                        # Here is where M138 vs Tile params can be set for the RSSI LED
+                        if DEVTAG == "TILE":
+                            RSSI_RED = -91
+                            RSSI_GREEN = -95
+                        elif DEVTAG == "M138":
+                            RSSI_RED = -87
+                            RSSI_GREEN = -91
         # check if it is a RSSI message
         if parse[0] == '$RT':
             # pass the data to the function that will set the color for the on board LED

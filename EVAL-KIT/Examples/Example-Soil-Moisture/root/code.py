@@ -149,7 +149,7 @@ while True:
     if serialData is not None:
         # parse the serial data
         parse = serialData[:-3].split(' ')
-	# get the Modem Type if it is not already acquired
+	    # get the Modem Type if it is not already acquired
         if DEVTAG == None:
             # acquire the device information from the Modem
             modem.write(b'$CS*10\n')
@@ -168,7 +168,7 @@ while True:
                         elif DEVTAG == "M138":
                             RSSI_RED = -87
                             RSSI_GREEN = -91
-	# check if it is a RSSI message
+	    # check if it is a RSSI message
         elif parse[0] == '$RT':
             # pass the data to the function that will set the color for the on board LED
             setRssiLed(parse)
