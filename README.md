@@ -10,7 +10,7 @@ Simple code examples can be found in the [Examples](https://github.com/Swarm-Tec
 [Swarm Eval Kit Quickstart Video](https://youtu.be/zJMWd1PM13E)\
 [Activating your Swarm M138 Modem](https://swarm.space/activating-your-swarm-m138-modem/)\
 [HIVE Login](https://bumblebee.hive.swarm.space/hive/ui/login)\
-[Swarm M138 Modem Product Manual](https://swarm.space/swarm-m138-modem-product-manual/)\
+[Swarm M138 Modem Product Manual](https://swarm.space/swarm-m138-modem-product-manual/)
 
 ## FAQ
 
