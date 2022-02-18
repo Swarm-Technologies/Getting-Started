@@ -289,12 +289,6 @@ def tileParseLine(line):
               global DEVTAG, RSSI_RED, RSSI_GREEN
               DEVTAG = v
               # Here is where M138 vs Tile params can be set
-              if DEVTAG == "TILE":
-                RSSI_RED = -91
-                RSSI_GREEN = -95
-              elif DEVTAG == "M138":
-                RSSI_RED = -87
-                RSSI_GREEN = -91
   if parse[0] == '$RT':
     if 'RSSI' in parse[1]:
       if ',' in parse[1]:
