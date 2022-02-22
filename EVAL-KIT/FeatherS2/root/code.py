@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '1.4'
+VERSION = '1.4.1'
 import board
 import displayio
 import digitalio
@@ -28,7 +28,7 @@ tileLine = bytearray(800)
 tilePtr = 0
 
 global DEVTAG
-DEVTAG = "TILE"
+DEVTAG = "M138"
 
 
 TILE_STATE_UNKNOWN = 0
@@ -41,7 +41,7 @@ TILE_STATE_6 = 6  # M138 or TILE
 TILE_STATE_CONFIGURED = 7
 
 tileStateTable = [('$FV',   '$FV 20',              4, TILE_STATE_2, TILE_STATE_REBOOTING),  # 0 state
-                  ('$RS',   f'${DEVTAG} BOOT,RUNNING', 30, TILE_STATE_2, TILE_STATE_REBOOTING),  # 1 state
+                  ('$RS',   'BOOT,RUNNING', 30, TILE_STATE_2, TILE_STATE_REBOOTING),  # 1 state
                   ('$DT 5', '$DT OK',              4, TILE_STATE_3, TILE_STATE_REBOOTING),  # 2 state
                   ('$GS 5', '$GS OK',              4, TILE_STATE_4, TILE_STATE_REBOOTING),  # 3 state
                   ('$GN 5', '$GN OK',              4, TILE_STATE_5, TILE_STATE_REBOOTING),  # 4 state
@@ -227,7 +227,7 @@ def tileCheck(line):
 
 def tileStart():
   global tileState, tileTimeout
-  displayLine(0, "Connecting to tile...")
+  displayLine(0, "Connecting to modem...")
   tileState = TILE_STATE_UNKNOWN
   while tileState != TILE_STATE_CONFIGURED:
     tile.write(b'\n' + makeTileCmd(tileStateTable[tileState][0]))
