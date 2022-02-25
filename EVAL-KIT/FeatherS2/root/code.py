@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '1.4'
+VERSION = '2.0-rc0'
 import board
 import displayio
 import digitalio
@@ -139,7 +139,7 @@ def displayInit():
   display = adafruit_displayio_sh1107.SH1107(display_bus, width=WIDTH, height=HEIGHT)
 
   # SWARM LOGO
-  splash = displayio.Group(max_size=10)
+  splash = displayio.Group()
   splash.y = 16
   display.show(splash)
   color_palette = displayio.Palette(1)
@@ -158,7 +158,7 @@ def displayInit():
   splash.pop()
   # SWARM LOGO
 
-  splash = displayio.Group(max_size=10)
+  splash = displayio.Group()
   display.show(splash)
 
 
