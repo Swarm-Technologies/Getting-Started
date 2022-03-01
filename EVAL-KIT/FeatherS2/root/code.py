@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '2.0-rc0'
+VERSION = '2.0-rc1-dev'
 import board
 import displayio
 import digitalio
@@ -22,13 +22,17 @@ from watchdog import WatchDogMode
 from adafruit_debouncer import Debouncer
 import gc
 
+import alarm
+
 ina3221 = None
 tile = None
 tileLine = bytearray(800)
 tilePtr = 0
 
 global DEVTAG
-DEVTAG = "TILE"
+DEVTAG = "M138"
+
+REVIVE_THRESHOLD = 3.2
 
 
 TILE_STATE_UNKNOWN = 0
@@ -41,7 +45,7 @@ TILE_STATE_6 = 6  # M138 or TILE
 TILE_STATE_CONFIGURED = 7
 
 tileStateTable = [('$FV',   '$FV 20',              4, TILE_STATE_2, TILE_STATE_REBOOTING),  # 0 state
-                  ('$RS',   f'${DEVTAG} BOOT,RUNNING', 30, TILE_STATE_2, TILE_STATE_REBOOTING),  # 1 state
+                  ('$RS',   'BOOT,RUNNING', 30, TILE_STATE_2, TILE_STATE_REBOOTING),  # 1 state
                   ('$DT 5', '$DT OK',              4, TILE_STATE_3, TILE_STATE_REBOOTING),  # 2 state
                   ('$GS 5', '$GS OK',              4, TILE_STATE_4, TILE_STATE_REBOOTING),  # 3 state
                   ('$GN 5', '$GN OK',              4, TILE_STATE_5, TILE_STATE_REBOOTING),  # 4 state
@@ -226,7 +230,7 @@ def tileCheck(line):
 
 
 def tileStart():
-  global tileState, tileTimeout
+  global tile, tileState, tileTimeout
   displayLine(0, "Connecting to tile...")
   tileState = TILE_STATE_UNKNOWN
   while tileState != TILE_STATE_CONFIGURED:
@@ -246,7 +250,6 @@ def tileStart():
 def tileInit():
   global tile
   tile = busio.UART(board.TX,board.RX,baudrate=115200,receiver_buffer_size=8192,timeout=0.0)
-  tileStart()
 
 
 def tileParseLine(line):
@@ -358,9 +361,41 @@ def inaInit():
     ina3221.enable_channel(2)
     ina3221.enable_channel(3)
     inaConnected = True
-  except:
+  except:  # TODO fix E722
     displayLine(1, "ina disconnected")
     inaConnected = False
+
+
+def inaBatteryCheck():
+    global tile, TILE_STATE, REVIVE_THRESHOLD
+    bv = ina3221.bus_voltage(1)
+    if bv <= REVIVE_THRESHOLD:
+        # sleep_memory[0] is the status byte for tile being slept for revival purposes
+        pixels[0] = (0, 1, 0, 0)
+        pixels.write()
+        time.sleep(.1)
+        if alarm.sleep_memory[0] == 0:
+            if TILE_STATE == TILE_STATE_UNKNOWN:
+                tileInit()
+                tileStart()
+            # set modem datetime (spoof)
+            tile.write(makeTileCmd("$OP TM=20220101010101"))
+            # send sl command to modem
+            # sleep for whole day. maybe wakeup via serial write sooner
+            tile.write(makeTileCmd("$SL s=86400"))
+            alarm.sleep_memory[0] = 1
+
+            pixels[1] = (1,0,0,0)
+            pixels[0] = (0,0,0,0)
+            pixels.write()
+
+            # deep sleep 
+            alm = alarm.time.TimeAlarm(monotonic_time=time.monotonic() + 10)
+            alarm.exit_and_deep_sleep_until_alarms(alm)
+    else:
+        # regular startup
+        # clear sleep memory state
+        alarm.sleep_memory[0] = 0
 
 
 def inaPoll():
@@ -377,6 +412,8 @@ def inaPoll():
       displayLine(1, "%s %6.3fV %6.3fA"%(inaChans[inaChannel], bus_voltage, current))
       inaData[inaChannel] = (bus_voltage, current)
       inaChannel = inaChannel + 1
+      if inaChannel == 1:
+          inaBatteryCheck()
       if inaChannel == 4:
         inaChannel = 1
     except:
@@ -822,6 +859,8 @@ buttonInit()
 factoryResetCheck()
 i2c = busio.I2C(board.SCL, board.SDA, frequency=400000)
 # i2c = board.I2C()
+inaInit()
+inaBatteryCheck()
 displayInit()
 readPreferences()
 if config['wifi'] == 'enabled':
@@ -830,9 +869,9 @@ if config['wifi'] == 'enabled':
   import ipaddress
   import wsgiserver as server
   from adafruit_wsgi.wsgi_app import WSGIApp
-inaInit()
 serialInit()
 tileInit()
+tileStart()
 wifiInit()
 tcpInit()
 httpInit()
@@ -853,6 +892,3 @@ except Exception as e:
   print(e)
   print("Resetting...")
   microcontroller.reset()
-
-
-
