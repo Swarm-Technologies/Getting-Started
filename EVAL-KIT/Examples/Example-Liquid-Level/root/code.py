@@ -80,9 +80,9 @@ def setRssiLed(rssiMsg):
         # convert the RSSI value to an integer
         irssi = int(rssiStringJoin)
         # set the LED color based on the RSSI value
-        if irssi > -91:
+        if irssi > RSSI_RED:
             pixels[0] = (16, 0, 0, 0)
-        elif irssi < -95:
+        elif irssi < RSSI_GREEN:
             pixels[0] = (0, 16, 0, 0)
         else:
             pixels[0] = (16, 16, 0, 0)
@@ -162,15 +162,8 @@ while True:
                 for param in cs_params:
                     k, v = param.split('=')
                     if k == "DN":
-                        global DEVTAG, RSSI_RED, RSSI_GREEN
+                        global DEVTAG
                         DEVTAG = v.strip('*')
-                        # Here is where M138 vs Tile params can be set for the RSSI LED
-                        if DEVTAG == "TILE":
-                            RSSI_RED = -91
-                            RSSI_GREEN = -95
-                        elif DEVTAG == "M138":
-                            RSSI_RED = -87
-                            RSSI_GREEN = -91
         # check if it is a RSSI message
         if parse[0] == '$RT':
             # pass the data to the function that will set the color for the on board LED

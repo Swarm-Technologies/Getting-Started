@@ -7,11 +7,11 @@ Programming Instructions:
 - Delete all of the files located on the FeatherS2
 - Copy the contents of the root folder from the Example-NeoPixel-RSSI repository and paste them onto the FeatherS2
 - Unplug the USB-C cable and turn on the eval kit
-- Monitor the RGB LED on the eval kit
-- The color of the RGB LED will change based on the RSSI value of the Swarm Modem and the Modem Type
+- Monitor the RGB LED in the eval kit
+- The color of the RGB LED will change based on the background RSSI value of the Swarm Modem
 - You can move the eval kit to different locations to see how it changes
 - Red represents an RSSI value that is more positive than -91 dBm
 - Green represents an RSSI value that is more negative than -95 dBm
 - Yellow represents values between -91 and -95 dBm
-- You want the LED to be green for the highest probability of message pcaket transmission
+- The LED should be green for the highest probability of message packet transmission
 

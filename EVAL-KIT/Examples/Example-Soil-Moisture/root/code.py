@@ -159,15 +159,8 @@ while True:
                 for param in cs_params:
                     k, v = param.split('=')
                     if k == "DN":
-                        global DEVTAG, RSSI_RED, RSSI_GREEN
+                        global DEVTAG
                         DEVTAG = v.strip('*')
-                        # Here is where M138 vs Tile params can be set for the RSSI LED
-                        if DEVTAG == "TILE":
-                            RSSI_RED = -91
-                            RSSI_GREEN = -95
-                        elif DEVTAG == "M138":
-                            RSSI_RED = -87
-                            RSSI_GREEN = -91
 	    # check if it is a RSSI message
         elif parse[0] == '$RT':
             # pass the data to the function that will set the color for the on board LED
