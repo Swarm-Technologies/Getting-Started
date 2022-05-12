@@ -854,6 +854,14 @@ def factoryResetCheck():
     microcontroller.reset()
 
 
+def mem_monitor():
+    global free_mem
+    gc.collect()
+    free_mem = gc.mem_free()
+    print(f"Memory free: {free_mem}")
+
+
+mem_monitor()
 watchDogInit()
 buttonInit()
 factoryResetCheck()
@@ -888,6 +896,7 @@ try:
     buttonPoll()
     w.feed()
     gc.collect()
+    mem_monitor()
 except Exception as e:
   print(e)
   print("Resetting...")
