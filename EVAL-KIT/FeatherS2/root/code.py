@@ -135,7 +135,7 @@ You must @reset for changes to take effect.\n\nVersion """
 
 
 def displayLine(line, text):
-    displayLines[line].text = text
+    pass
 
 
 def makeTileCmd(cmd):
