@@ -2,14 +2,9 @@
 # Copyright (C) 2022, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 import board
-import displayio
-import digitalio
-import terminalio
 import busio
 import time
 import neopixel
-from adafruit_display_text import label
-import adafruit_displayio_sh1107
 from barbudor_ina3221 import *
 import supervisor
 import sys
@@ -18,7 +13,6 @@ import json
 from binascii import hexlify
 from microcontroller import watchdog as w
 from watchdog import WatchDogMode
-from adafruit_debouncer import Debouncer
 import gc
 
 VERSION = "lite"
