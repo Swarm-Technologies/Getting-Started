@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '1.4.1'
+VERSION = '1.4.2'
 import board
 import displayio
 import digitalio
@@ -574,6 +574,11 @@ def serialPoll():
       else:
         print('wifi mode:', config['mode'])
         print('wifi:', config['wifi'])
+        if config['wifi'] == "enabled":
+            addr = wifi.radio.ipv4_address if config['mode'] == "sta" else wifi.radio.ipv4_address_ap
+        else:
+            addr = ''
+        print('wifi addr: ', str(addr))
         print('wifi ssid:', config['ssid'])
         print('wifi pw:  ', config['password'])
         print('gps interval: ' + (str(config['interval']), 'OFF')[config['interval'] <= 0] + '\n')
@@ -832,8 +837,8 @@ if config['wifi'] == 'enabled':
   from adafruit_wsgi.wsgi_app import WSGIApp
 inaInit()
 serialInit()
-tileInit()
 wifiInit()
+tileInit()
 tcpInit()
 httpInit()
 gpsInit()
