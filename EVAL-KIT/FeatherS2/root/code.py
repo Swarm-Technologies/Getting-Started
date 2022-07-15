@@ -15,7 +15,9 @@ from microcontroller import watchdog as w
 from watchdog import WatchDogMode
 import gc
 
-VERSION = "lite"
+import swarms2
+
+VERSION = "lite v1.2"
 
 ina3221 = None
 tile = None
@@ -36,13 +38,13 @@ TILE_STATE_6 = 6  # M138 or TILE
 TILE_STATE_CONFIGURED = 7
 
 tileStateTable = [
-    ("$FV", "$FV 20", 6, TILE_STATE_2, TILE_STATE_REBOOTING),  # 0 state
-    ("$RS", "BOOT,RUNNING", 45, TILE_STATE_2, TILE_STATE_REBOOTING),  # 1 state
-    ("$DT 5", "$DT OK", 6, TILE_STATE_3, TILE_STATE_REBOOTING),  # 2 state
-    ("$GS 5", "$GS OK", 6, TILE_STATE_4, TILE_STATE_REBOOTING),  # 3 state
-    ("$GN 5", "$GN OK", 6, TILE_STATE_5, TILE_STATE_REBOOTING),  # 4 state
-    ("$RT 5", "$RT OK", 6, TILE_STATE_6, TILE_STATE_REBOOTING),  # 5 state
-    ("$CS", "$CS DI=", 6, TILE_STATE_CONFIGURED, TILE_STATE_REBOOTING),  # 5 state
+    ("$FV", "$FV 20", 4, TILE_STATE_2, TILE_STATE_REBOOTING),  # 0 state
+    ("$RS", "BOOT,RUNNING", 30, TILE_STATE_2, TILE_STATE_REBOOTING),  # 1 state
+    ("$DT 5", "$DT OK", 4, TILE_STATE_3, TILE_STATE_REBOOTING),  # 2 state
+    ("$GS 5", "$GS OK", 4, TILE_STATE_4, TILE_STATE_REBOOTING),  # 3 state
+    ("$GN 5", "$GN OK", 4, TILE_STATE_5, TILE_STATE_REBOOTING),  # 4 state
+    ("$RT 5", "$RT OK", 4, TILE_STATE_6, TILE_STATE_REBOOTING),  # 5 state
+    ("$CS", "$CS DI=", 4, TILE_STATE_CONFIGURED, TILE_STATE_REBOOTING),  # 5 state
     (None, None, 0, TILE_STATE_CONFIGURED, TILE_STATE_CONFIGURED),
 ]  # 6 state
 tileTimeout = 0.0
@@ -88,6 +90,8 @@ global RSSI_RED, RSSI_GREEN
 RSSI_RED = -91
 RSSI_GREEN = -95
 pixels = neopixel.NeoPixel(board.IO38, 2, bpp=4, pixel_order=neopixel.GRBW)
+onboardPixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.1,
+                                 auto_write=True, pixel_order=neopixel.GRB)
 
 
 mdata = []
@@ -126,6 +130,26 @@ Restart the feather.
 You must @reset for changes to take effect.\n\nVersion """
     + VERSION
 )
+
+
+def ledCheck():
+    """
+    flashes onboardPixel green the minor revision number
+
+    i.e for version 1.2, the led will flash green twice
+    """
+
+    def getVersionPips() -> int:
+        return int(VERSION.split('.')[-1])
+
+    BLINK_TIME = 0.2
+
+    for i in range(getVersionPips()):
+        swarms2.set_pixel_power(True)
+        onboardPixel[0] = (0, 255, 0)
+        time.sleep(BLINK_TIME)
+        swarms2.set_pixel_power(False)
+        time.sleep(BLINK_TIME)
 
 
 def displayLine(line, text):
@@ -726,7 +750,7 @@ def gpspoll():
                 gpsObj = {}
                 gn = lastGN[4:-3].split(",")
                 s = lastDT
-                gpsObj["d"] = 946684800 + time.mktime(
+                gpsObj["d"] = time.mktime(
                     (
                         int(s[4:8]),
                         int(s[8:10]),
@@ -828,6 +852,9 @@ def updateLEDs():
 
 
 watchDogInit()
+ledCheck()
+
+# This line will fail if there is no pullup present (i.e the eval socket)
 i2c = busio.I2C(board.SCL, board.SDA, frequency=400000)
 # i2c = board.I2C()
 readPreferences()
