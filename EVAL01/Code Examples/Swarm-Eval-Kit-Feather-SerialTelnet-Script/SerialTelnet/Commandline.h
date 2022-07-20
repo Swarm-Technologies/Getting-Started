@@ -74,7 +74,7 @@ bool getCommandLineFromSerialPort(char *commandLine)
     return false;
 }
 
-bool DoMyCommand(char *commandLine)
+void DoMyCommand(char *commandLine)
 {
     //  print2("\nCommand: ", commandLine);
     int result;
