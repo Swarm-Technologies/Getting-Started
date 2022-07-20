@@ -29,7 +29,7 @@
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 #endif
 #ifdef OLED_SH110x
-Adafruit_SH110X display = Adafruit_SH110X(64, 128, &Wire);
+Adafruit_SH1107 display = Adafruit_SH1107(64, 128, &Wire);
 #endif
 
 #if defined(ESP32)
