@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Copyright (C) 2021, Swarm Technologies, Inc.  All rights reserved.  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = '2.0-rc0'
+VERSION = '2.0-rc1'
 import board
 import displayio
 import digitalio
@@ -21,6 +21,8 @@ from microcontroller import watchdog as w
 from watchdog import WatchDogMode
 from adafruit_debouncer import Debouncer
 import gc
+
+LOG_FILEPATH = "./tilelog.txt"
 
 ina3221 = None
 tile = None
@@ -251,6 +253,8 @@ def tileInit():
 
 def tileParseLine(line):
   print(line)
+  with open(LOG_FILEPATH, 'a') as f:
+      f.write(line + '\n')
   global lastDT, lastGN, lastRSSI
   if len(line) < 4:
     return
