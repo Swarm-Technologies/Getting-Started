@@ -90,7 +90,9 @@ global RSSI_RED, RSSI_GREEN
 # These values are default for DN=TILE
 RSSI_RED = -91
 RSSI_GREEN = -95
-pixels = neopixel.NeoPixel(board.IO38, 2, bpp=4, pixel_order=neopixel.GRBW)
+
+# For the ESP32-S3 Feather 4/2 from Adafruit, use D6 for the neopixel
+pixels = neopixel.NeoPixel(board.D6, 2, bpp=4, pixel_order=neopixel.GRBW)
 
 
 mdata = []
@@ -760,12 +762,12 @@ def watchDogInit():
 def buttonInit():
   global switchA, switchC
 
-  pinA = digitalio.DigitalInOut(board.D5)
+  pinA = digitalio.DigitalInOut(board.D9)  # d5 for feathers2
   pinA.direction = digitalio.Direction.INPUT
   pinA.pull = digitalio.Pull.UP
   switchA = Debouncer(pinA)
 
-  pinC = digitalio.DigitalInOut(board.D20)
+  pinC = digitalio.DigitalInOut(board.D5)  # d20 for feathers2
   pinC.direction = digitalio.Direction.INPUT
   pinC.pull = digitalio.Pull.UP
   switchC = Debouncer(pinC)
